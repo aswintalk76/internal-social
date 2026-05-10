@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, Home, PenSquare, User } from "lucide-react";
+import { Bookmark, Home, MessagesSquare, PenSquare, User } from "lucide-react";
 
 import { env } from "@/config/env";
 import { ROUTES } from "@/config/routes";
@@ -11,10 +11,19 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const nav = [
   { href: ROUTES.home, label: "Home", Icon: Home },
+  { href: ROUTES.chat, label: "Chats", Icon: MessagesSquare },
   { href: ROUTES.create, label: "Create", Icon: PenSquare },
   { href: ROUTES.saved, label: "Saved", Icon: Bookmark },
   { href: ROUTES.profile("me"), label: "Profile", Icon: User },
 ] as const;
+
+function navActive(pathname: string, href: string) {
+  if (href === ROUTES.home) return pathname === "/";
+  if (href === ROUTES.chat) {
+    return pathname === ROUTES.chat || pathname.startsWith(`${ROUTES.chat}/`);
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function SocialShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,12 +47,9 @@ export function SocialShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/90 backdrop-blur-xl safe-area-pb">
-        <div className="mx-auto flex max-w-3xl items-stretch justify-around px-2 py-2.5 sm:px-4">
+        <div className="mx-auto flex max-w-3xl items-stretch justify-around gap-0.5 overflow-x-auto px-1 py-2.5 sm:px-2">
           {nav.map(({ href, label, Icon }) => {
-            const active =
-              href === ROUTES.home
-                ? pathname === "/"
-                : pathname === href || pathname.startsWith(`${href}/`);
+            const active = navActive(pathname, href);
             return (
               <Link
                 key={href}

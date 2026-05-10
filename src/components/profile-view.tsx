@@ -7,6 +7,7 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -15,6 +16,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { ROUTES } from "@/config/routes";
 import { formatApiError } from "@/lib/format-api-error";
 import { cn } from "@/lib/utils";
+import { chatService } from "@/services/chat.service";
 import { socialService } from "@/services/social.service";
 import type { ProfileMember } from "@/types/social";
 
@@ -24,6 +26,7 @@ type Tab = "posts" | "followers" | "following";
 
 export function ProfileView({ username }: Props) {
   const qc = useQueryClient();
+  const router = useRouter();
   const isMeShortcut = username === "me";
   const [tab, setTab] = useState<Tab>("posts");
 
@@ -67,6 +70,14 @@ export function ProfileView({ username }: Props) {
       void qc.invalidateQueries({ queryKey: ["profile-followers"] });
       void qc.invalidateQueries({ queryKey: ["profile-following"] });
       void qc.invalidateQueries({ queryKey: ["social-feed"] });
+    },
+  });
+
+  const messageMut = useMutation({
+    mutationFn: async (uname: string) => chatService.openChat(uname),
+    onSuccess: (chat) => {
+      void qc.invalidateQueries({ queryKey: ["social-chats"] });
+      router.push(ROUTES.chatThread(chat.id));
     },
   });
 
@@ -145,18 +156,28 @@ export function ProfileView({ username }: Props) {
         <div className="flex shrink-0 flex-col items-end gap-2">
           {is_me ? <SignOutButton /> : null}
           {!is_me ? (
-            <button
-              type="button"
-              disabled={followMut.isPending}
-              onClick={() => followMut.mutate()}
-              className="rounded-full border border-border/80 bg-background/90 px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors hover:bg-muted disabled:opacity-50"
-            >
-              {followMut.isPending
-                ? "…"
-                : bundle.following
-                  ? "Following"
-                  : "Follow"}
-            </button>
+            <>
+              <button
+                type="button"
+                disabled={messageMut.isPending}
+                onClick={() => messageMut.mutate(profile.username)}
+                className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 disabled:opacity-50"
+              >
+                {messageMut.isPending ? "…" : "Message"}
+              </button>
+              <button
+                type="button"
+                disabled={followMut.isPending}
+                onClick={() => followMut.mutate()}
+                className="rounded-full border border-border/80 bg-background/90 px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                {followMut.isPending
+                  ? "…"
+                  : bundle.following
+                    ? "Following"
+                    : "Follow"}
+              </button>
+            </>
           ) : null}
         </div>
         </div>
@@ -165,6 +186,11 @@ export function ProfileView({ username }: Props) {
       {followMut.isError ? (
         <p className="text-xs text-destructive">
           {formatApiError(followMut.error, "Could not update follow.")}
+        </p>
+      ) : null}
+      {messageMut.isError ? (
+        <p className="text-xs text-destructive">
+          {formatApiError(messageMut.error, "Could not open chat.")}
         </p>
       ) : null}
 

@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 
+import { SocialSocketProvider } from "@/providers/social-socket-provider";
+
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -16,15 +18,17 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        storageKey="fluent-theme"
-        disableTransitionOnChange
-      >
-        {children}
-      </ThemeProvider>
+      <SocialSocketProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          storageKey="fluent-theme"
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </SocialSocketProvider>
     </QueryClientProvider>
   );
 }
